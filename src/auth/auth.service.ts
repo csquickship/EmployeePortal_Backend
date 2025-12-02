@@ -36,7 +36,42 @@ export class AuthService {
   }
 
   // --------------- VALIDATION ---------------
+  // async validateUser(email: string, password: string) {
+  //   const user = await this.userModel.findOne({ email });
+  //   if (!user) throw new UnauthorizedException('User not found');
+
+  //   const match = await bcrypt.compare(password, user.password);
+  //   if (!match) throw new UnauthorizedException('Invalid credentials');
+
+  //   return user;
+  // }
+
   async validateUser(email: string, password: string) {
+    const isLocal = process.env.IS_LOCAL === 'true';
+
+    // ---------------- LOCAL LOGIN MODE ----------------
+    if (isLocal) {
+      const localEmail = process.env.LOCAL_EMAIL;
+      const localPassword = process.env.LOCAL_PASSWORD;
+
+      if (!localEmail || !localPassword) {
+        throw new Error('Local credentials missing in environment variables.');
+      }
+
+      if (email !== localEmail || password !== localPassword) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      // Fake user object return karo — DB hit na ho
+      return {
+        _id: 'local-user',
+        email: localEmail,
+        role: 'admin',
+        name: 'Local Developer',
+      };
+    }
+
+    // ---------------- NORMAL DB VALIDATION ----------------
     const user = await this.userModel.findOne({ email });
     if (!user) throw new UnauthorizedException('User not found');
 
@@ -48,14 +83,19 @@ export class AuthService {
 
   // ------------------ LOGIN -----------------
   async login(email: string, password: string) {
-    const user = await this.validateUser(email, password);
+    const isLocal = process.env.IS_LOCAL === 'true';
+    const normalizedEmail = email.trim().toLowerCase();
+    // Always validate using normalized email
+    const user = await this.validateUser(normalizedEmail, password);
 
     const accessToken = this.generateAccessToken(user);
     const refreshToken = this.generateRefreshToken(user);
 
-    await this.userModel.findByIdAndUpdate(user._id, {
-      refreshToken: this.hash(refreshToken),
-    });
+    if (!isLocal) {
+      await this.userModel.findByIdAndUpdate(user._id, {
+        refreshToken: this.hash(refreshToken),
+      });
+    }
 
     return { accessToken, refreshToken };
   }

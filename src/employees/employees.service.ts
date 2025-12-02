@@ -14,8 +14,51 @@ export class EmployeesService {
     return this.employeeModel.create(data);
   }
 
-  async findAll(id: string) {
-    return this.employeeModel.find({ userId: id });
+  // async findAll(id: string) {
+  //   return this.employeeModel.find({ userId: id });
+  // }
+
+  async findAll(userId: string) {
+    const isLocal = process.env.IS_LOCAL === 'true';
+
+    if (isLocal) {
+      return [
+        {
+          _id: 'emp_001',
+          name: 'Amit Sharma',
+          email: 'amit.sharma@example.com',
+          age: 28,
+          userId,
+          __v: 0,
+        },
+        {
+          _id: 'emp_002',
+          name: 'Neha Verma',
+          email: 'neha.verma@example.com',
+          age: 32,
+          userId,
+          __v: 0,
+        },
+        {
+          _id: 'emp_003',
+          name: 'Rohan Gupta',
+          email: 'rohan.gupta@example.com',
+          age: 29,
+          userId,
+          __v: 0,
+        },
+        {
+          _id: 'emp_004',
+          name: 'Priya Nair',
+          email: 'priya.nair@example.com',
+          age: 26,
+          userId,
+          __v: 0,
+        },
+      ];
+    }
+
+    return this.employeeModel.find({ userId });
   }
 
   async Delete(id: string, userId: string) {
